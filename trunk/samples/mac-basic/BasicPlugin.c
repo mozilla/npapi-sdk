@@ -14,15 +14,20 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/*
+ * This sample plugin uses the Cocoa event model and the Core Graphics
+ * drawing model.
+ */
+
 #include "BasicPlugin.h"
 
-// structure containing pointers to functions implemented by the browser
+/* Structure containing pointers to functions implemented by the browser. */
 static NPNetscapeFuncs* browser;
 
-// local store of the browser UA string that we we paint into the plugin's window
+/* Local store of the browser UA string that we we paint into the plugin's window. */
 static CFStringRef browserUAString = NULL;
 
-// data for each instance of this plugin
+/* Data for each instance of this plugin. */
 typedef struct PluginInstance {
   NPP npp;
   NPWindow window;
@@ -30,20 +35,20 @@ typedef struct PluginInstance {
 
 void drawPlugin(NPP instance, NPCocoaEvent* event);
 
-// Symbol called once by the browser to initialize the plugin
+/* Symbol called once by the browser to initialize the plugin. */
 NPError NP_Initialize(NPNetscapeFuncs* browserFuncs)
 {  
-  // save away browser functions
+  /* Save the browser function table. */
   browser = browserFuncs;
 
   return NPERR_NO_ERROR;
 }
 
-// Symbol called by the browser to get the plugin's function list
+/* Function called by the browser to get the plugin's function table. */
 NPError NP_GetEntryPoints(NPPluginFuncs* pluginFuncs)
 {
-  // Check the size of the provided structure based on the offset of the
-  // last member we need.
+  /* Check the size of the provided structure based on the offset of the
+     last member we need. */
   if (pluginFuncs->size < (offsetof(NPPluginFuncs, setvalue) + sizeof(void*)))
     return NPERR_INVALID_FUNCTABLE_ERROR;
 
@@ -64,14 +69,14 @@ NPError NP_GetEntryPoints(NPPluginFuncs* pluginFuncs)
   return NPERR_NO_ERROR;
 }
 
-// Symbol called once by the browser to shut down the plugin
+/* Function called once by the browser to shut down the plugin. */
 void NP_Shutdown(void)
 {
   CFRelease(browserUAString);
   browserUAString = NULL;
 }
 
-// Called to create a new instance of the plugin
+/* Called to create a new instance of the plugin. */
 NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* argn[], char* argv[], NPSavedData* saved)
 {
   PluginInstance *newInstance = (PluginInstance*)malloc(sizeof(PluginInstance));
@@ -80,7 +85,7 @@ NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc
   newInstance->npp = instance;
   instance->pdata = newInstance;
 
-  // select the right drawing model if necessary
+  /* Select the Core Graphics drawing model. */
   NPBool supportsCoreGraphics = false;
   if (browser->getvalue(instance, NPNVsupportsCoreGraphicsBool, &supportsCoreGraphics) == NPERR_NO_ERROR && supportsCoreGraphics) {
     browser->setvalue(instance, NPPVpluginDrawingModel, (void*)NPDrawingModelCoreGraphics);
@@ -89,7 +94,7 @@ NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc
     return NPERR_INCOMPATIBLE_VERSION_ERROR;
   }
 
-  // select the Cocoa event model
+  /* Select the Cocoa event model. */
   NPBool supportsCocoaEvents = false;
   if (browser->getvalue(instance, NPNVsupportsCocoaBool, &supportsCocoaEvents) == NPERR_NO_ERROR && supportsCocoaEvents) {
     browser->setvalue(instance, NPPVpluginEventModel, (void*)NPEventModelCocoa);
@@ -100,14 +105,15 @@ NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc
 
   if (!browserUAString) {
     const char* ua = browser->uagent(instance);
-    if (ua)
+    if (ua) {
       browserUAString = CFStringCreateWithCString(kCFAllocatorDefault, ua, kCFStringEncodingASCII);
+    }
   }
 
   return NPERR_NO_ERROR;
 }
 
-// Called to destroy an instance of the plugin
+/* Called to destroy an instance of the plugin. */
 NPError NPP_Destroy(NPP instance, NPSavedData** save)
 {
   free(instance->pdata);
@@ -115,7 +121,7 @@ NPError NPP_Destroy(NPP instance, NPSavedData** save)
   return NPERR_NO_ERROR;
 }
 
-// Called to update a plugin instances's NPWindow
+/* Called to update a plugin instances's NPWindow. */
 NPError NPP_SetWindow(NPP instance, NPWindow* window)
 {
   PluginInstance* currentInstance = (PluginInstance*)(instance->pdata);
@@ -124,7 +130,6 @@ NPError NPP_SetWindow(NPP instance, NPWindow* window)
   
   return NPERR_NO_ERROR;
 }
-
 
 NPError NPP_NewStream(NPP instance, NPMIMEType type, NPStream* stream, NPBool seekable, uint16_t* stype)
 {
@@ -184,36 +189,38 @@ NPError NPP_SetValue(NPP instance, NPNVariable variable, void *value)
 
 void drawPlugin(NPP instance, NPCocoaEvent* event)
 {
-  if (!browserUAString)
+  if (!browserUAString) {
     return;
+  }
 
   PluginInstance* currentInstance = (PluginInstance*)(instance->pdata);
   CGContextRef cgContext = event->data.draw.context;
-  if (!cgContext)
+  if (!cgContext) {
     return;
+  }
 
   float windowWidth = currentInstance->window.width;
   float windowHeight = currentInstance->window.height;
-  
-  // save the cgcontext gstate
+
+  /* Save the cgcontext gstate. */
   CGContextSaveGState(cgContext);
-  
-  // we get a flipped context
+
+  /* We get a flipped context. */
   CGContextTranslateCTM(cgContext, 0.0, windowHeight);
   CGContextScaleCTM(cgContext, 1.0, -1.0);
-  
-  // draw a gray background for the plugin
+
+  /* Draw a gray background for the plugin. */
   CGContextAddRect(cgContext, CGRectMake(0, 0, windowWidth, windowHeight));
   CGContextSetGrayFillColor(cgContext, 0.5, 1.0);
   CGContextDrawPath(cgContext, kCGPathFill);
-  
-  // draw a black frame around the plugin
+
+  /* Draw a black frame around the plugin. */
   CGContextAddRect(cgContext, CGRectMake(0, 0, windowWidth, windowHeight));
   CGContextSetGrayStrokeColor(cgContext, 0.0, 1.0);
   CGContextSetLineWidth(cgContext, 6.0);
   CGContextStrokePath(cgContext);
-  
-  // draw the UA string using ATSUI
+
+  /* Draw the UA string using ATSUI. */
   CGContextSetGrayFillColor(cgContext, 0.0, 1.0);
   ATSUStyle atsuStyle;
   ATSUCreateStyle(&atsuStyle);
@@ -273,7 +280,7 @@ void drawPlugin(NPP instance, NPCocoaEvent* event)
   ATSUDrawText(atsuLayout, currentDrawOffset, kATSUToTextEnd, FloatToFixed(5.0), FloatToFixed(windowHeight - 5.0 - (lineHeight * (i + 1.0))));
   free(unicharBuffer);
   free(softBreaks);
-  
-  // restore the cgcontext gstate
+
+  /* Restore the cgcontext gstate. */
   CGContextRestoreGState(cgContext);
 }
