@@ -134,7 +134,7 @@ NP_GetPluginVersion()
   return PLUGIN_VERSION;
 }
 
-NP_EXPORT(char*)
+NP_EXPORT(const char*)
 NP_GetMIMEDescription()
 {
   return "application/basic-plugin:bsc:Basic plugin";
