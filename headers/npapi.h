@@ -366,7 +366,7 @@ typedef enum {
   /* Checks to see if the plug-in would like the browser to load the "src" attribute. */
   NPPVpluginCancelSrcStream = 20,
 
-  NPPVSupportsAdvancedKeyHandling = 21,
+  NPPVsupportsAdvancedKeyHandling = 21,
 
   NPPVpluginUsesDOMForCursorBool = 22
 
