@@ -416,8 +416,8 @@ typedef enum {
   NPNVdocumentOrigin = 22
 
 #if defined(XP_MACOSX)
-  /* Used for negotiating drawing models */
-  , NPNVpluginDrawingModel = 1000
+  , NPNVpluginDrawingModel = 1000 /* Get the current drawing model (NPDrawingModel) */
+  , NPNVcontentsScaleFactor = 1001
 #ifndef NP_NO_QUICKDRAW
   , NPNVsupportsQuickDrawBool = 2000
 #endif
