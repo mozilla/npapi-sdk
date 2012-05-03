@@ -316,9 +316,9 @@ typedef enum {
 #if defined(MOZ_X11)
   NPDrawingModelSyncX = 6,
 #endif
-  NPDrawingModelAsyncBitmapSurface = 7,
+  NPDrawingModelAsyncBitmapSurface = 7
 #if defined(XP_WIN)
-  NPDrawingModelAsyncWindowsDXGISurface = 8
+  , NPDrawingModelAsyncWindowsDXGISurface = 8
 #endif
 } NPDrawingModel;
 
