@@ -407,11 +407,11 @@ typedef enum {
 
   NPPVsupportsAdvancedKeyHandling = 21,
 
-  NPPVpluginUsesDOMForCursorBool = 22
+  NPPVpluginUsesDOMForCursorBool = 22,
 
-#if defined(XP_MACOSX)
   /* Used for negotiating drawing models */
-  , NPPVpluginDrawingModel = 1000
+  NPPVpluginDrawingModel = 1000
+#if defined(XP_MACOSX)
   /* Used for negotiating event models */
   , NPPVpluginEventModel = 1001
   /* In the NPDrawingModelCoreAnimation drawing model, the browser asks the plug-in for a Core Animation layer. */
