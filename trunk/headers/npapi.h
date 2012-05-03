@@ -228,6 +228,33 @@ typedef enum {
   NPFocusPrevious = 1
 } NPFocusDirection;
 
+/* These formats describe the format in the memory byte-order. This means if
+ * a 32-bit value of a pixel is viewed on a little-endian system the layout will
+ * be 0xAARRGGBB. The Alpha channel will be stored in the most significant
+ * bits. */
+typedef enum {
+  /* 32-bit per pixel 8-bit per channel - premultiplied alpha */
+  NPImageFormatBGRA32     = 0x1,
+  /* 32-bit per pixel 8-bit per channel - 1 unused channel */
+  NPImageFormatBGRX32     = 0x2 
+} NPImageFormat;
+
+typedef struct _NPAsyncSurface
+{
+  uint32_t version;
+  NPSize size;
+  NPImageFormat format;
+  union {
+    struct {
+      uint32_t stride;
+      void *data;
+    } bitmap;
+#if defined(XP_WIN)
+    HANDLE sharedHandle;
+#endif
+  };
+} NPAsyncSurface;
+
 /* Return values for NPP_HandleEvent */
 #define kNPEventNotHandled 0
 #define kNPEventHandled 1
@@ -273,8 +300,8 @@ typedef struct
 
 #endif /* XP_UNIX */
 
-#if defined(XP_MACOSX)
 typedef enum {
+#if defined(XP_MACOSX)
 #ifndef NP_NO_QUICKDRAW
   NPDrawingModelQuickDraw = 0,
 #endif
@@ -282,8 +309,20 @@ typedef enum {
   NPDrawingModelOpenGL = 2,
   NPDrawingModelCoreAnimation = 3,
   NPDrawingModelInvalidatingCoreAnimation = 4
+#endif
+#if defined(XP_WIN)
+  NPDrawingModelSyncWin = 5,
+#endif
+#if defined(MOZ_X11)
+  NPDrawingModelSyncX = 6,
+#endif
+  NPDrawingModelAsyncBitmapSurface = 7,
+#if defined(XP_WIN)
+  NPDrawingModelAsyncWindowsDXGISurface = 8
+#endif
 } NPDrawingModel;
 
+#ifdef XP_MACOSX
 typedef enum {
 #ifndef NP_NO_CARBON
   NPEventModelCarbon = 0,
@@ -413,10 +452,10 @@ typedef enum {
 
   NPNVsupportsAdvancedKeyHandling = 21,
 
-  NPNVdocumentOrigin = 22
+  NPNVdocumentOrigin = 22,
 
+  NPNVpluginDrawingModel = 1000 /* Get the current drawing model (NPDrawingModel) */
 #if defined(XP_MACOSX)
-  , NPNVpluginDrawingModel = 1000 /* Get the current drawing model (NPDrawingModel) */
   , NPNVcontentsScaleFactor = 1001
 #ifndef NP_NO_QUICKDRAW
   , NPNVsupportsQuickDrawBool = 2000
@@ -425,6 +464,12 @@ typedef enum {
   , NPNVsupportsOpenGLBool = 2002
   , NPNVsupportsCoreAnimationBool = 2003
   , NPNVsupportsInvalidatingCoreAnimationBool = 2004
+#endif
+  , NPNVsupportsAsyncBitmapSurfaceBool = 2007
+#if defined(XP_WIN)
+  , NPNVsupportsAsyncWindowsDXGISurfaceBool = 2008
+#endif
+#if defined(XP_MACOSX)
 #ifndef NP_NO_CARBON
   , NPNVsupportsCarbonBool = 3000 /* TRUE if the browser supports the Carbon event model */
 #endif
@@ -820,6 +865,7 @@ void    NP_LOADDS NPP_LostFocus(NPP instance);
 void    NP_LOADDS NPP_URLRedirectNotify(NPP instance, const char* url, int32_t status, void* notifyData);
 NPError NP_LOADDS NPP_ClearSiteData(const char* site, uint64_t flags, uint64_t maxAge);
 char**  NP_LOADDS NPP_GetSitesWithData(void);
+void    NP_LOADDS NPP_DidComposite(NPP instance);
 
 /* NPN_* functions are provided by the navigator and called by the plugin. */
 void        NP_LOADDS NPN_Version(int* plugin_major, int* plugin_minor,
@@ -882,6 +928,11 @@ NPBool      NP_LOADDS NPN_ConvertPoint(NPP instance, double sourceX, double sour
 NPBool      NP_LOADDS NPN_HandleEvent(NPP instance, void *event, NPBool handled);
 NPBool      NP_LOADDS NPN_UnfocusInstance(NPP instance, NPFocusDirection direction);
 void        NP_LOADDS NPN_URLRedirectResponse(NPP instance, void* notifyData, NPBool allow);
+NPError     NP_LOADDS NPN_InitAsyncSurface(NPP instance, NPSize *size,
+                                           NPImageFormat format, void *initData,
+                                           NPAsyncSurface *surface);
+NPError     NP_LOADDS NPN_FinalizeAsyncSurface(NPP instance, NPAsyncSurface *surface);
+void        NP_LOADDS NPN_SetCurrentAsyncSurface(NPP instance, NPAsyncSurface *surface, NPRect *changed);
 
 #ifdef __cplusplus
 }  /* end extern "C" */
