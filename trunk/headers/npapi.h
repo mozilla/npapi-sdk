@@ -308,7 +308,7 @@ typedef enum {
   NPDrawingModelCoreGraphics = 1,
   NPDrawingModelOpenGL = 2,
   NPDrawingModelCoreAnimation = 3,
-  NPDrawingModelInvalidatingCoreAnimation = 4
+  NPDrawingModelInvalidatingCoreAnimation = 4,
 #endif
 #if defined(XP_WIN)
   NPDrawingModelSyncWin = 5,
