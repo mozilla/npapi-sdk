@@ -70,14 +70,21 @@
 #endif
 #endif
 
-#if defined(XP_MACOSX) && defined(__LP64__)
+#if defined(XP_MACOSX)
+#if !defined(NP_NO_OPENGL)
+#define NP_NO_OPENGL 1
+#endif /* !defined(NP_NO_OPENGL) */
+#if defined(__LP64__)
 #define NP_NO_QUICKDRAW
 #define NP_NO_CARBON
+#endif /* defined(__LP64__) */
 #endif
 
 #if defined(XP_MACOSX)
 #include <ApplicationServices/ApplicationServices.h>
+#if !NP_NO_OPENGL
 #include <OpenGL/OpenGL.h>
+#endif /* !NP_NO_OPENGL */
 #ifndef NP_NO_CARBON
 #include <Carbon/Carbon.h>
 #endif
@@ -649,6 +656,7 @@ typedef struct NP_CGContext
  * drawing model.
  */
 
+#if !NP_NO_OPENGL
 typedef struct NP_GLContext
 {
   CGLContextObj context;
@@ -658,6 +666,7 @@ typedef struct NP_GLContext
   void *window; /* Can be either an NSWindow or a WindowRef depending on the event model */
 #endif
 } NP_GLContext;
+#endif /* !NP_NO_OPENGL */
 
 typedef enum {
   NPCocoaEventDrawRect = 1,
