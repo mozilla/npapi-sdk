@@ -1,0 +1,1 @@
+The goal of this project is to provide a set of reference NPAPI headers which all browser and plugin projects can use. Additionally it will contain utility code and sample code to make life easier for NPAPI developers.
