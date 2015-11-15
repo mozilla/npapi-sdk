@@ -479,6 +479,12 @@ typedef enum {
   , NPNVsupportsAsyncBitmapSurfaceBool = 2007
 #if defined(XP_WIN)
   , NPNVsupportsAsyncWindowsDXGISurfaceBool = 2008
+  , NPNVpreferredDXGIAdapter = 2009 /* On success, returns a DXGI_ADAPTER_DESC by value. This
+                                       is the adapter that should be used for creating a device
+                                       when using an async DXGI surface provided by the browser.
+                                       Consumers should use this in conjunction with
+                                       IDXGIFactory1::EnumAdapters1 and match the AdapterLuid
+                                       portion of the descriptor. */
 #endif
 #if defined(XP_MACOSX)
 #ifndef NP_NO_CARBON
