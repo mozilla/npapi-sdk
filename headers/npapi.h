@@ -108,7 +108,7 @@
 /*----------------------------------------------------------------------*/
 
 #define NP_VERSION_MAJOR 0
-#define NP_VERSION_MINOR 28
+#define NP_VERSION_MINOR 29
 
 
 /* The OS/2 version of Netscape uses RC_DATA to define the
@@ -235,6 +235,33 @@ typedef enum {
   NPFocusPrevious = 1
 } NPFocusDirection;
 
+/* These formats describe the format in the memory byte-order. This means if
+ * a 32-bit value of a pixel is viewed on a little-endian system the layout will
+ * be 0xAARRGGBB. The Alpha channel will be stored in the most significant
+ * bits. */
+typedef enum {
+  /* 32-bit per pixel 8-bit per channel - premultiplied alpha */
+  NPImageFormatBGRA32     = 0x1,
+  /* 32-bit per pixel 8-bit per channel - 1 unused channel */
+  NPImageFormatBGRX32     = 0x2
+} NPImageFormat;
+
+typedef struct _NPAsyncSurface
+{
+  uint32_t version;       /* Always 0 */
+  NPSize size;            /* Surface size */
+  NPImageFormat format;   /* Image format */
+  union {
+    struct {
+      uint32_t stride;    /* Image stride */
+      void *data;         /* Bitmap buffer, length is stride * size.height bytes */
+    } bitmap;
+#if defined(XP_WIN)
+    HANDLE sharedHandle;  /* DXGI 1.1 resource handle */
+#endif
+  };
+} NPAsyncSurface;
+
 /* Return values for NPP_HandleEvent */
 #define kNPEventNotHandled 0
 #define kNPEventHandled 1
@@ -297,11 +324,9 @@ typedef enum {
 #if defined(MOZ_X11)
   , NPDrawingModelSyncX = 6
 #endif
-#if 0 /* OBSOLETE */
-  , NPDrawingModelAsyncBitmapSurfaceOBSOLETE = 7
+  , NPDrawingModelAsyncBitmapSurface = 7
 #if defined(XP_WIN)
-  , NPDrawingModelAsyncWindowsDXGISurfaceOBSOLETE = 8
-#endif
+  , NPDrawingModelAsyncWindowsDXGISurface = 8
 #endif
 } NPDrawingModel;
 
@@ -451,11 +476,15 @@ typedef enum {
   , NPNVsupportsCoreAnimationBool = 2003
   , NPNVsupportsInvalidatingCoreAnimationBool = 2004
 #endif
-#if 0 /* OBSOLETE */
-  , NPNVsupportsAsyncBitmapSurfaceBoolOBSOLETE = 2007
+  , NPNVsupportsAsyncBitmapSurfaceBool = 2007
 #if defined(XP_WIN)
-  , NPNVsupportsAsyncWindowsDXGISurfaceBoolOBSOLETE = 2008
-#endif
+  , NPNVsupportsAsyncWindowsDXGISurfaceBool = 2008
+  , NPNVpreferredDXGIAdapter = 2009 /* On success, returns a DXGI_ADAPTER_DESC by value. This
+                                       is the adapter that should be used for creating a device
+                                       when using an async DXGI surface provided by the browser.
+                                       Consumers should use this in conjunction with
+                                       IDXGIFactory1::EnumAdapters1 and match the AdapterLuid
+                                       portion of the descriptor. */
 #endif
 #if defined(XP_MACOSX)
 #ifndef NP_NO_CARBON
@@ -921,6 +950,11 @@ NPBool      NP_LOADDS NPN_ConvertPoint(NPP instance, double sourceX, double sour
 NPBool      NP_LOADDS NPN_HandleEvent(NPP instance, void *event, NPBool handled);
 NPBool      NP_LOADDS NPN_UnfocusInstance(NPP instance, NPFocusDirection direction);
 void        NP_LOADDS NPN_URLRedirectResponse(NPP instance, void* notifyData, NPBool allow);
+NPError     NP_LOADDS NPN_InitAsyncSurface(NPP instance, NPSize *size,
+                                           NPImageFormat format, void *initData,
+                                           NPAsyncSurface *surface);
+NPError     NP_LOADDS NPN_FinalizeAsyncSurface(NPP instance, NPAsyncSurface *surface);
+void        NP_LOADDS NPN_SetCurrentAsyncSurface(NPP instance, NPAsyncSurface *surface, NPRect *changed);
 
 #ifdef __cplusplus
 }  /* end extern "C" */
